@@ -1,32 +1,53 @@
 'use strict';
 
-let question = prompt('Как называется ваш проект?', '  мой   проект  ');
-let title = !!question ? question : 'Мой проект';
-
-question = prompt('Какие типы экранов нужно разработать?(пример: "Простые, Сложные, Интерактивные")', 'Простые, Сложные, Интерактивные');
-let screens = !!question ? question : 'Не определено';
-
-question = prompt('Сколько будет стоить данная работа?', 0);
-let screenPrice = Number.isInteger(+question) ? +question : 0;
-
-let adaptive = confirm('Нужен ли адаптив на сайте?');
-
-let service1 = prompt('Какой дополнительный тип услуги нужен?', 'Услуга 1');
-question = prompt('Сколько это будет стоить?', 0);
-let servicePrice1 = Number.isInteger(+question) ? +question : 0;
-
-let service2 = prompt('Какой дополнительный тип услуги нужен?', 'Услуга 2');
-question = prompt('Сколько это будет стоить?', 0);
-let servicePrice2 = Number.isInteger(+question) ? +question : 0;
+let title;
+let screens;
+let screenPrice;
+let adaptive;
+let service1;
+let service2;
+let allServicePrices;
+let fullPrice;
+let servicePercentPrice;
 
 const rollback = 10;
 
-const showTypeOf = function (variable) {
-    console.log(variable, typeof variable);
+const isNumber = num => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' ');
+const isValidString = string => string ? !!string.trim() : false;
+
+const getValue = function (question, defaultValue, check) {
+    let value;
+    do {
+        value = prompt(question, defaultValue);
+    } while (!check(value));
+    return value;
 }
 
-const getAllServicePrices = function (price1, price2) {
-    return price1 + price2;
+const asking = function () {
+    title = getValue('Как называется ваш проект?', '  мой   проект  ', isValidString);
+    adaptive = confirm('Нужен ли адаптив на сайте?');
+    screens = getValue('Какие типы экранов нужно разработать?(пример: "Простые, Сложные, Интерактивные")', 'Простые, Сложные, Интерактивные', isValidString);
+    screenPrice = +getValue('Сколько будет стоить данная работа?', 0, isNumber);
+}
+
+
+const getAllServicePrices = function () {
+    let sum = 0;
+    let servicePrice;
+    for (let i = 0; i < 2; i++) {
+        if (i === 0) {
+            service1 = prompt('Какой дополнительный тип услуги нужен?', 'Услуга 1');
+        } else if (i === 1) {
+            service2 = prompt('Какой дополнительный тип услуги нужен?', 'Услуга 2');
+        }
+        servicePrice = getValue('Сколько это будет стоить?', 0, isNumber);
+        sum += +servicePrice;
+    }
+    return sum;
+}
+
+const showTypeOf = function (variable) {
+    console.log(variable, typeof variable);
 }
 
 function getFullPrice(screenPrice, allServicePrices) {
@@ -56,13 +77,17 @@ const getRollBackMessage = function (price) {
     }
 }
 
+asking();
+
 title = getTitle(title);
 
-let allServicePrices = getAllServicePrices(servicePrice1, servicePrice2);
+allServicePrices = getAllServicePrices();
 
-let fullPrice = getFullPrice(screenPrice, allServicePrices);
+console.log(screenPrice, allServicePrices);
 
-let servicePercentPrice = getServicePercentPrices(fullPrice, rollback);
+fullPrice = getFullPrice(screenPrice, allServicePrices);
+
+servicePercentPrice = getServicePercentPrices(fullPrice, rollback);
 
 showTypeOf(title);
 showTypeOf(fullPrice);
