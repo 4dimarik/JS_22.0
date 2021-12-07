@@ -1,5 +1,40 @@
 'use strict';
 
+const titleElement = document.getElementsByTagName('h1')[0];
+const startBtn = document.getElementsByClassName('handler_btn')[0];
+const resetBtn = document.getElementsByClassName('handler_btn')[1];
+const screenBtn = document.querySelector('.screen-btn');
+const otherItemsPercentElements = document.querySelectorAll('.other-items.percent');
+const otherItemsNumberElements = document.querySelectorAll('.other-items.number');
+const inputRollback = document.querySelector('.rollback input[type="range"]');
+const rangeValueElement = document.querySelector('.rollback span');
+const [
+  inputTotal,
+  inputTotalCount,
+  inputTotalCountOther,
+  inputTotalFullCount,
+  inputTotalCountRollback,
+] = document.getElementsByClassName('total-input');
+
+let screenElement = document.querySelector('.screen');
+
+console.log('titleElement: ', titleElement);
+console.log('startBtn: ', startBtn);
+console.log('resetBtn: ', resetBtn);
+console.log('screenBtn: ', screenBtn);
+console.log('otherItemsPercentElements: ', otherItemsPercentElements);
+console.log('otherItemsNumberElements: ', otherItemsNumberElements);
+console.log('inputRollback: ', inputRollback);
+console.log('rangeValueElement: ', rangeValueElement);
+
+console.log(
+  inputTotal,
+  inputTotalCount,
+  inputTotalCountOther,
+  inputTotalFullCount,
+  inputTotalCountRollback
+);
+
 const appData = {
   title: '',
   screens: [],
@@ -57,8 +92,8 @@ const appData = {
       );
       let price = +appData.getValue('Сколько это будет стоить?', 0, appData.isNumber);
       /*УСЛОЖНЕННОЕ ЗАДАНИЕ
-      Если пользователь введет одинаковый ответ на вопрос "Какой дополнительный тип услуги нужен?" 
-      то необходимо не перезаписывать, а сохранять оба ответа в appData.services, добавить каждому 
+      Если пользователь введет одинаковый ответ на вопрос "Какой дополнительный тип услуги нужен?"
+      то необходимо не перезаписывать, а сохранять оба ответа в appData.services, добавить каждому
       названию ключа уникальность!
       */
       let serviceNamePattern = new RegExp(`${name}[_0-9]*`, 'g');
@@ -119,4 +154,4 @@ const appData = {
   },
 };
 
-appData.start();
+// appData.start();
