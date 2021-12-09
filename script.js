@@ -1,5 +1,5 @@
 'use strict';
-//1. Восстановить порядок книг.
+// 1. Восстановить порядок книг.
 const bookList = document.querySelector('.books');
 const books = document.querySelectorAll('.book');
 let orderedBooks = [...books].reduce((sortBooks, item) => {
@@ -9,17 +9,17 @@ let orderedBooks = [...books].reduce((sortBooks, item) => {
 }, []);
 orderedBooks.forEach((book) => bookList.append(book));
 
-//2. Заменить картинку заднего фона на другую из папки image
+// 2. Заменить картинку заднего фона на другую из папки image
 const body = document.querySelector('body');
 body.style.backgroundImage = 'url(./image/you-dont-know-js.jpg)';
 
-//3. Исправить заголовок в книге 3( Получится - "Книга 3. this и Прототипы Объектов")
+// 3. Исправить заголовок в книге 3( Получится - "Книга 3. this и Прототипы Объектов")
 document.querySelector('.book:nth-child(3) > h2 > a').textContent = 'Книга 3. this и Прототипы Объектов';
 
-//4. Удалить рекламу со страницы
+// 4. Удалить рекламу со страницы
 document.querySelector('.adv').remove();
 
-//5. Восстановить порядок глав во второй и пятой книге (внимательно инспектируйте индексы элементов, поможет dev tools)
+// 5. Восстановить порядок глав во второй и пятой книге
 const book2 = document.querySelector('.book:nth-child(2)');
 const book5 = document.querySelector('.book:nth-child(5)');
 
@@ -39,13 +39,15 @@ const sortTableOfContentsBook = (book) => {
     { chapters: [], appendixs: {} }
   );
 
-  const sortAppendixs = Object.keys(sortTableOfContents.appendixs)
+  const { chapters, appendixs } = sortTableOfContents;
+
+  const sortAppendixs = Object.keys(appendixs)
     .sort()
-    .map((item) => sortTableOfContents.appendixs[item]);
+    .map((item) => appendixs[item]);
 
   let lastItem = tableOfContentsBook[1];
 
-  sortTableOfContents.chapters.forEach((item) => {
+  chapters.forEach((item) => {
     lastItem.after(item);
     lastItem = item;
   });
