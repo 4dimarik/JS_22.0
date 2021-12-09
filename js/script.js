@@ -26,6 +26,7 @@ console.log('otherItemsPercentElements: ', otherItemsPercentElements);
 console.log('otherItemsNumberElements: ', otherItemsNumberElements);
 console.log('inputRollback: ', inputRollback);
 console.log('rangeValueElement: ', rangeValueElement);
+console.log('screenElement: ', screenElement);
 
 console.log(
   inputTotal,
