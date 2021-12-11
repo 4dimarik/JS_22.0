@@ -18,11 +18,11 @@ const appData = {
   screens: [],
   screenPrice: 0,
   adaptive: true,
-  rollback: 10,
+  rollback: 0,
   allServicePrices: 0,
   fullPrice: 0,
   servicePercentPrice: 0,
-  numberOfServices: 2,
+  numberOfScreens: 0,
   services: [],
 
   init: function () {
@@ -37,7 +37,6 @@ const appData = {
     screensBlock.addEventListener('input', appData.screensValidation);
 
     // 2) Повесить на input[type=range] (в блоке с классом .rollback) обработчик...
-
     inputRollback.addEventListener('input', appData.rollbackChange);
   },
 
@@ -48,13 +47,14 @@ const appData = {
     appData.addServices();
     appData.addPrices();
     appData.showResult();
-    // appData.getServicePercentPrices();
     appData.logger();
   },
   showResult: () => {
     inputTotal.value = appData.screenPrice;
     inputTotalCountOther.value = appData.allServicePrices;
     inputTotalFullCount.value = appData.fullPrice;
+    inputTotalCountRollback.value = appData.servicePercentPrice;
+    inputTotalCount.value = appData.numberOfScreens;
   },
 
   isNumber: (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' '),
@@ -76,10 +76,11 @@ const appData = {
     appData.getScreens().forEach((screen, id) => {
       const select = screen.querySelector('select');
       const input = screen.querySelector('input');
+      const count = +input.value;
       const name = select.options[select.selectedIndex].textContent;
-      const price = +select.value * +input.value;
+      const price = +select.value * count;
 
-      appData.screens.push({ id, name, price });
+      appData.screens.push({ id, name, price, count });
     });
   },
   addScreenBlock: () => {
@@ -119,29 +120,26 @@ const appData = {
   },
 
   addPrices: function () {
-    appData.screenPrice = appData.screens.reduce((sum, screen) => sum + screen.price, 0);
+    // 4) ... В методе addPrices посчитать общее количество экранов...
+    const screenSumData = appData.screens.reduce(
+      (sum, screen) => {
+        sum.price += screen.price;
+        sum.count += screen.count;
+        return sum;
+      },
+      { price: 0, count: 0 }
+    );
+    appData.numberOfScreens = screenSumData.count;
+    appData.screenPrice = screenSumData.price;
     appData.allServicePrices = appData.services.reduce((sum, service) => {
       if (service.priceType === 'percent') sum += appData.screenPrice * (service.price / 100);
       if (service.priceType === 'number') sum += service.price;
       return sum;
     }, 0);
     appData.fullPrice = appData.screenPrice + appData.allServicePrices;
-  },
-
-  getServicePercentPrices: function () {
+    // 3) В нашем объекте присутствует метод getServicePercentPrice ...
     const { fullPrice, rollback } = appData;
     appData.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
-  },
-  getRollBackMessage: function (price) {
-    if (price >= 30000) {
-      return 'Даем скидку в 10%';
-    } else if (price >= 15000 && price < 30000) {
-      return 'Даем скидку в 5%';
-    } else if (price >= 0 && price < 15000) {
-      return 'Скидка не предусмотрена';
-    } else {
-      return 'Что то пошло не так';
-    }
   },
   screensValidation: () => {
     const alert = document.getElementById('alert');
@@ -179,13 +177,9 @@ const appData = {
     console.log('services: ', appData.services);
     console.log('allServicePrices:', appData.allServicePrices);
     console.log('fullPrice: ', appData.fullPrice);
+    console.log(appData.servicePercentPrice);
 
     console.log(appData);
-
-    //
-    // console.log(appData.servicePercentPrice);
-    //
-    // console.log(appData.screenPrice);
   },
 };
 
