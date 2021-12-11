@@ -173,7 +173,7 @@ const appData = {
     let value = event.target.value;
     appData.rollback = +value;
     rangeValueElement.textContent = value + '%';
-
+    //УСЛОЖНЕННОЕ ЗАДАНИЕ:
     if (appData.isCalculated) {
       appData.servicePercentPrice = appData.fullPrice - appData.fullPrice * (appData.rollback / 100);
       inputTotalCountRollback.value = appData.servicePercentPrice;
