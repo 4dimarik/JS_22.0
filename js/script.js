@@ -24,6 +24,7 @@ const appData = {
   servicePercentPrice: 0,
   numberOfScreens: 0,
   services: [],
+  isCalculated: false,
 
   init: function () {
     appData.addTitle();
@@ -47,6 +48,8 @@ const appData = {
     appData.addServices();
     appData.addPrices();
     appData.showResult();
+    appData.isCalculated = true;
+
     appData.logger();
   },
   showResult: () => {
@@ -170,6 +173,11 @@ const appData = {
     let value = event.target.value;
     appData.rollback = +value;
     rangeValueElement.textContent = value + '%';
+
+    if (appData.isCalculated) {
+      appData.servicePercentPrice = appData.fullPrice - appData.fullPrice * (appData.rollback / 100);
+      inputTotalCountRollback.value = appData.servicePercentPrice;
+    }
   },
 
   logger: () => {
