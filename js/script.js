@@ -31,10 +31,14 @@ const appData = {
     startBtn.addEventListener('click', appData.start);
     addScreenBtn.addEventListener('click', appData.addScreenBlock);
 
-    // 1) Запретить нажатие кнопки Рассчитать
+    // 1) Запретить нажатие кнопки Рассчитать...
     startBtn.disabled = true;
     const screensBlock = document.querySelectorAll('.main-controls__views.element')[0];
     screensBlock.addEventListener('input', appData.screensValidation);
+
+    // 2) Повесить на input[type=range] (в блоке с классом .rollback) обработчик...
+
+    inputRollback.addEventListener('input', appData.rollbackChange);
   },
 
   start: () => {
@@ -163,6 +167,11 @@ const appData = {
     alert.style.margin = '5px';
     alert.textContent = text;
     return alert;
+  },
+  rollbackChange: (event) => {
+    let value = event.target.value;
+    appData.rollback = +value;
+    rangeValueElement.textContent = value + '%';
   },
 
   logger: () => {
