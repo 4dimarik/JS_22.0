@@ -30,7 +30,13 @@ const appData = {
 
     startBtn.addEventListener('click', appData.start);
     addScreenBtn.addEventListener('click', appData.addScreenBlock);
+
+    // 1) Запретить нажатие кнопки Рассчитать
+    startBtn.disabled = true;
+    const screensBlock = document.querySelectorAll('.main-controls__views.element')[0];
+    screensBlock.addEventListener('input', appData.screensValidation);
   },
+
   start: () => {
     appData.screens = [];
     appData.addScreens();
@@ -132,6 +138,31 @@ const appData = {
     } else {
       return 'Что то пошло не так';
     }
+  },
+  screensValidation: () => {
+    const alert = document.getElementById('alert');
+    if (alert) alert.remove();
+    const isValid = [...appData.getScreens()].some((screen) => {
+      const selectValue = screen.querySelector('select').value;
+      const inputValue = screen.querySelector('input').value;
+      return selectValue !== '' && appData.isNumber(inputValue);
+    });
+    if (isValid) {
+      startBtn.disabled = false;
+    } else {
+      const btnBlock = document.querySelector('.main-total__buttons');
+      btnBlock.before(appData.getAlert('Параметры экранов заданы не корректно'));
+    }
+  },
+
+  getAlert: (text) => {
+    const alert = document.createElement('small');
+    alert.id = 'alert';
+    alert.style.color = 'red';
+    alert.style.textAlign = 'center';
+    alert.style.margin = '5px';
+    alert.textContent = text;
+    return alert;
   },
 
   logger: () => {
