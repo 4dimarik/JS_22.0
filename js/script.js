@@ -8,11 +8,16 @@ const otherItemsPercentElements = document.querySelectorAll('.other-items.percen
 const otherItemsNumberElements = document.querySelectorAll('.other-items.number');
 const inputRollback = document.querySelector('.rollback input[type="range"]');
 const rangeValueElement = document.querySelector('.rollback span');
-const [inputTotal, inputTotalCount, inputTotalCountOther, inputTotalFullCount, inputTotalCountRollback] =
-  document.getElementsByClassName('total-input');
+const hiddenCmsVariants = document.querySelector('hidden-cms-variants');
+const [
+  inputTotal,
+  inputTotalCount,
+  inputTotalCountOther,
+  inputTotalFullCount,
+  inputTotalCountRollback,
+] = document.getElementsByClassName('total-input');
 
 //let screens = document.querySelectorAll('.screen');
-
 const appData = {
   title: '',
   screens: [],
@@ -26,42 +31,72 @@ const appData = {
   services: [],
   isCalculated: false,
 
+  elements: {
+    screens: [],
+  },
+  initScreens: null,
+
   init: function () {
-    appData.addTitle();
+    this.addTitle();
 
-    startBtn.addEventListener('click', appData.start);
-    addScreenBtn.addEventListener('click', appData.addScreenBlock);
+    startBtn.addEventListener('click', this.start.bind(appData));
+    resetBtn.addEventListener('click', this.reset.bind(appData));
+    addScreenBtn.addEventListener('click', this.addScreenBlock.bind(appData));
 
-    // 1) Запретить нажатие кнопки Рассчитать...
     startBtn.disabled = true;
     const screensBlock = document.querySelectorAll('.main-controls__views.element')[0];
-    screensBlock.addEventListener('input', appData.screensValidation);
+    screensBlock.addEventListener('input', this.screensValidation.bind(appData));
 
-    // 2) Повесить на input[type=range] (в блоке с классом .rollback) обработчик...
-    inputRollback.addEventListener('input', appData.rollbackChange);
+    inputRollback.addEventListener('input', this.rollbackChange.bind(appData));
+    this.getScreensElements();
+
+    this.initScreens = this.getScreens()[0].cloneNode(true);
+
+    const cmsOpen = document.querySelector('#cms-open');
+    cmsOpen.addEventListener('click', this.cmsOpen.bind(appData));
   },
 
-  start: () => {
-    appData.screens = [];
-    appData.addScreens();
-    appData.services = [];
-    appData.addServices();
-    appData.addPrices();
-    appData.showResult();
-    appData.isCalculated = true;
+  start: function () {
+    this.screens = [];
+    this.addScreens();
+    this.services = [];
+    this.addServices();
+    this.addPrices();
+    this.showResult();
+    this.isCalculated = true;
 
-    appData.logger();
-  },
-  showResult: () => {
-    inputTotal.value = appData.screenPrice;
-    inputTotalCountOther.value = appData.allServicePrices;
-    inputTotalFullCount.value = appData.fullPrice;
-    inputTotalCountRollback.value = appData.servicePercentPrice;
-    inputTotalCount.value = appData.numberOfScreens;
-  },
+    this.toggleMainControlsViews();
+    this.toggleDispley(startBtn);
+    this.toggleDispley(resetBtn);
 
-  isNumber: (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' '),
-  isValidString: (string) => (string && !appData.isNumber(string.trim()) ? !!string.trim() : false),
+    // this.logger();
+  },
+  reset: function () {
+    this.getScreens().forEach((screen) => screen.remove());
+    addScreenBtn.before(this.initScreens);
+
+    [...document.getElementsByClassName('total-input')].forEach((input) => (input.value = ''));
+    document
+      .querySelectorAll('.main-controls__views.element input[type="checkbox"]')
+      .forEach((checkbox) => (checkbox.checked = false));
+
+    inputRollback.value = 0;
+    inputRollback.dispatchEvent(new Event('input'));
+
+    this.toggleDispley(startBtn);
+    this.toggleDispley(resetBtn);
+  },
+  toggleDispley: function (element) {
+    element.style.display = startBtn.style.display === 'none' ? 'block' : 'none';
+  },
+  cmsOpen: function () {},
+  showResult: function () {
+    inputTotal.value = this.screenPrice;
+    inputTotalCountOther.value = this.allServicePrices;
+    inputTotalFullCount.value = this.fullPrice;
+    inputTotalCountRollback.value = this.servicePercentPrice;
+    inputTotalCount.value = this.numberOfScreens;
+  },
   getValue: function (question, defaultValue, check) {
     let value;
     do {
@@ -69,62 +104,64 @@ const appData = {
     } while (!check(value));
     return value;
   },
-  addTitle: () => {
+  addTitle: function () {
     document.title = titleElement.textContent;
   },
-  getScreens: () => {
+  getScreens: function () {
     return document.querySelectorAll('.screen');
   },
-  addScreens: () => {
-    appData.getScreens().forEach((screen, id) => {
+  addScreens: function () {
+    this.getScreens().forEach((screen, id) => {
       const select = screen.querySelector('select');
       const input = screen.querySelector('input');
       const count = +input.value;
       const name = select.options[select.selectedIndex].textContent;
       const price = +select.value * count;
 
-      appData.screens.push({ id, name, price, count });
+      this.screens.push({ id, name, price, count });
     });
   },
-  addScreenBlock: () => {
-    const cloneScreen = appData.getScreens()[0].cloneNode(true);
+  addScreenBlock: function () {
+    const cloneScreen = this.getScreens()[0].cloneNode(true);
     cloneScreen.querySelector('select').value = '';
     cloneScreen.querySelector('input').value = null;
 
     addScreenBtn.before(cloneScreen);
+    this.getScreensElements();
   },
-  addServices: () => {
+  getScreensElements: function () {
+    this.elements.screens = [...this.getScreens()].reduce((elements, screen) => {
+      const select = screen.querySelector('select');
+      const input = screen.querySelector('input');
+      elements.push(select, input);
+      return elements;
+    }, []);
+  },
+  toggleMainControlsViews: function () {
+    this.elements.screens.forEach((element) => (element.disabled = !element.disabled));
+    addScreenBtn.disabled = !addScreenBtn.disabled;
+  },
+  addServices: function () {
     otherItemsPercentElements.forEach((element) => {
-      const { isSelected, name, price } = appData.getServiceData(element);
+      const { isSelected, name, price } = this.getServiceData(element);
       const priceType = 'percent';
-      if (isSelected) appData.services.push({ name, priceType, price });
+      if (isSelected) this.services.push({ name, priceType, price });
     });
     otherItemsNumberElements.forEach((element) => {
-      const { isSelected, name, price } = appData.getServiceData(element);
+      const { isSelected, name, price } = this.getServiceData(element);
       const priceType = 'number';
-      if (isSelected) appData.services.push({ name, priceType, price });
+      if (isSelected) this.services.push({ name, priceType, price });
     });
   },
-  getServiceData: (service) => {
+  getServiceData: function (service) {
     return {
       isSelected: service.querySelector('input[type=checkbox]').checked,
       name: service.querySelector('label').textContent,
       price: +service.querySelector('input[type=text]').value,
     };
   },
-
-  getServiceName: function (question, defaultValue) {
-    let value;
-    do {
-      value = prompt(question, defaultValue);
-    } while (!appData.isValidString(value));
-
-    return value;
-  },
-
   addPrices: function () {
-    // 4) ... В методе addPrices посчитать общее количество экранов...
-    const screenSumData = appData.screens.reduce(
+    const screenSumData = this.screens.reduce(
       (sum, screen) => {
         sum.price += screen.price;
         sum.count += screen.count;
@@ -132,35 +169,56 @@ const appData = {
       },
       { price: 0, count: 0 }
     );
-    appData.numberOfScreens = screenSumData.count;
-    appData.screenPrice = screenSumData.price;
-    appData.allServicePrices = appData.services.reduce((sum, service) => {
-      if (service.priceType === 'percent') sum += appData.screenPrice * (service.price / 100);
+    this.numberOfScreens = screenSumData.count;
+    this.screenPrice = screenSumData.price;
+    this.allServicePrices = this.services.reduce((sum, service) => {
+      if (service.priceType === 'percent') sum += this.screenPrice * (service.price / 100);
       if (service.priceType === 'number') sum += service.price;
       return sum;
     }, 0);
-    appData.fullPrice = appData.screenPrice + appData.allServicePrices;
-    // 3) В нашем объекте присутствует метод getServicePercentPrice ...
-    const { fullPrice, rollback } = appData;
-    appData.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
+    this.fullPrice = this.screenPrice + this.allServicePrices;
+
+    const { fullPrice, rollback } = this;
+    this.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
   },
-  screensValidation: () => {
+  screensValidation: function () {
+    // console.log('input');
+    const isNumber = (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' ');
+    // if (event.target.tagName === 'SELECT') {
+    //   if (event.target.value !== '') {
+    //     event.target.setCustomValidity('Укажите тип экрана');
+    //   } else {
+    //     event.target.setCustomValidity('');
+    //   }
+    // }
+    // if (event.target.tagName === 'INPUT') {
+    //   if (isNumber(event.target.value) !== '') {
+    //     event.target.setCustomValidity('Укажите количество экранов');
+    //   } else {
+    //     event.target.setCustomValidity('');
+    //   }
+    // }
     const alert = document.getElementById('alert');
     if (alert) alert.remove();
-    const isValid = [...appData.getScreens()].some((screen) => {
+    const isValid = [...this.getScreens()].some((screen) => {
       const selectValue = screen.querySelector('select').value;
       const inputValue = screen.querySelector('input').value;
-      return selectValue !== '' && appData.isNumber(inputValue);
+      return selectValue !== '' && isNumber(inputValue);
     });
     if (isValid) {
       startBtn.disabled = false;
     } else {
       const btnBlock = document.querySelector('.main-total__buttons');
-      btnBlock.before(appData.getAlert('Параметры экранов заданы не корректно'));
+      btnBlock.before(this.getAlert('Параметры экранов заданы не корректно'));
     }
   },
+  isValidScreens: function () {
+    return this.elements.screens.reduce((isValid, element) => {
+      return element.checkValidity() && isValid;
+    }, true);
+  },
 
-  getAlert: (text) => {
+  getAlert: function (text) {
     const alert = document.createElement('small');
     alert.id = 'alert';
     alert.style.color = 'red';
@@ -169,25 +227,26 @@ const appData = {
     alert.textContent = text;
     return alert;
   },
-  rollbackChange: (event) => {
+  rollbackChange: function (event) {
     let value = event.target.value;
-    appData.rollback = +value;
+    this.rollback = +value;
     rangeValueElement.textContent = value + '%';
-    //УСЛОЖНЕННОЕ ЗАДАНИЕ:
-    if (appData.isCalculated) {
-      appData.servicePercentPrice = appData.fullPrice - appData.fullPrice * (appData.rollback / 100);
-      inputTotalCountRollback.value = appData.servicePercentPrice;
+
+    if (this.isCalculated) {
+      this.servicePercentPrice = this.fullPrice - this.fullPrice * (this.rollback / 100);
+      inputTotalCountRollback.value = this.servicePercentPrice;
     }
   },
 
-  logger: () => {
-    console.log('screens: ', appData.screens);
-    console.log('services: ', appData.services);
-    console.log('allServicePrices:', appData.allServicePrices);
-    console.log('fullPrice: ', appData.fullPrice);
-    console.log(appData.servicePercentPrice);
+  logger: function () {
+    console.log('screens: ', this.screens);
+    console.log('services: ', this.services);
+    console.log('allServicePrices:', this.allServicePrices);
+    console.log('fullPrice: ', this.fullPrice);
+    console.log(this.servicePercentPrice);
+    console.log(this.elements);
 
-    console.log(appData);
+    console.log(this);
   },
 };
 
