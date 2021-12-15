@@ -157,8 +157,8 @@ const appData = {
       ...document.querySelectorAll(
         '.main-controls__views.element:first-child, ' +
           '.main-controls__views.cms, ' +
-          '.main-controls__views.element:nth-child(2) .main-controls__checkbox, ' +
-          '.main-controls__views.element:nth-child(4)'
+          '.main-controls__views.element:nth-child(2) .main-controls__checkbox '
+        //'.main-controls__views.element:nth-child(4)'
       ),
     ].reduce((elements, item) => {
       const childrenItem = item.querySelectorAll('select, input');
@@ -220,6 +220,7 @@ const appData = {
     this.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
   },
   isValidFields: function () {
+    console.log(this.changeableFormElements);
     return this.changeableFormElements.reduce(
       (validData, element) => {
         if (element.type === 'text' && element.id !== 'cms-other-input') {
@@ -251,6 +252,7 @@ const appData = {
           if (element.localName === 'select' && element.id === 'cms-select') {
             const isElementValid = element.value !== '';
             validData.isValid = validData.isValid && isElementValid;
+            console.log(validData.isValid, isElementValid);
             if (!isElementValid) validData.messages.push(`"${element[0].textContent}" не указан`);
           }
         }
@@ -261,11 +263,13 @@ const appData = {
   },
   validation: function () {
     const validationData = this.isValidFields();
+    console.log(validationData);
     const alert = document.getElementById('alert');
     if (alert) alert.remove();
     if (validationData.isValid) {
       startBtn.disabled = false;
     } else {
+      startBtn.disabled = true;
       const btnBlock = document.querySelector('.main-total__buttons');
       btnBlock.before(this.getAlert(validationData.messages));
     }
@@ -276,9 +280,7 @@ const appData = {
     alert.style.color = 'white';
     alert.style.backgroundColor = '#a45858';
     alert.style.borderRadius = '5px';
-    //alert.style.textAlign = 'center';
     alert.style.margin = '5px';
-    //alert.style.fontWeight = '600';
 
     const messagesList = document.createElement('ol');
     messages.forEach((message) => {
