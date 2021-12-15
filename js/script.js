@@ -8,7 +8,13 @@ const otherItemsPercentElements = document.querySelectorAll('.other-items.percen
 const otherItemsNumberElements = document.querySelectorAll('.other-items.number');
 const inputRollback = document.querySelector('.rollback input[type="range"]');
 const rangeValueElement = document.querySelector('.rollback span');
-const hiddenCmsVariants = document.querySelector('hidden-cms-variants');
+const cmsOpen = document.querySelector('#cms-open');
+const hiddenCmsVariants = document.querySelector('.hidden-cms-variants');
+const cmsSelect = document.querySelector('#cms-select');
+const cmsOtherInputBlock = document.querySelector(
+  '.main-controls__views.cms .main-controls__input'
+);
+const cmsOtherInput = document.querySelector('#cms-other-input');
 const [
   inputTotal,
   inputTotalCount,
@@ -18,6 +24,8 @@ const [
 ] = document.getElementsByClassName('total-input');
 
 //let screens = document.querySelectorAll('.screen');
+const isNumber = (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' ');
+
 const appData = {
   title: '',
   screens: [],
@@ -34,6 +42,7 @@ const appData = {
   elements: {
     screens: [],
   },
+  changeableFormElements: [],
   initScreens: null,
 
   init: function () {
@@ -45,15 +54,16 @@ const appData = {
 
     startBtn.disabled = true;
     const screensBlock = document.querySelectorAll('.main-controls__views.element')[0];
-    screensBlock.addEventListener('input', this.screensValidation.bind(appData));
+    screensBlock.addEventListener('input', this.isValidScreens.bind(appData));
 
     inputRollback.addEventListener('input', this.rollbackChange.bind(appData));
-    this.getScreensElements();
+    this.getChangeableFormElements();
 
     this.initScreens = this.getScreens()[0].cloneNode(true);
 
-    const cmsOpen = document.querySelector('#cms-open');
-    cmsOpen.addEventListener('click', this.cmsOpen.bind(appData));
+    cmsOpen.addEventListener('click', this.toggleCms.bind(appData));
+    cmsSelect.addEventListener('change', this.changeCmsSelect.bind(appData));
+    cmsOtherInput.addEventListener('input', this.isValidNumber.bind(appData));
   },
 
   start: function () {
@@ -72,10 +82,13 @@ const appData = {
     // this.logger();
   },
   reset: function () {
+    this.isCalculated = false;
+    this.toggleMainControlsViews();
     this.getScreens().forEach((screen) => screen.remove());
     addScreenBtn.before(this.initScreens);
 
     [...document.getElementsByClassName('total-input')].forEach((input) => (input.value = ''));
+
     document
       .querySelectorAll('.main-controls__views.element input[type="checkbox"]')
       .forEach((checkbox) => (checkbox.checked = false));
@@ -83,13 +96,30 @@ const appData = {
     inputRollback.value = 0;
     inputRollback.dispatchEvent(new Event('input'));
 
+    cmsOpen.checked = false;
+    this.toggleCms();
+
     this.toggleDispley(startBtn);
     this.toggleDispley(resetBtn);
+    addScreenBtn.disabled = false;
   },
   toggleDispley: function (element) {
     element.style.display = startBtn.style.display === 'none' ? 'block' : 'none';
   },
-  cmsOpen: function () {},
+  toggleCms: function () {
+    if (cmsOpen.checked && hiddenCmsVariants.style.display === 'none') {
+      hiddenCmsVariants.style.display = 'flex';
+    } else {
+      hiddenCmsVariants.style.display = 'none';
+    }
+  },
+  changeCmsSelect: function (event) {
+    if (event.target.value === 'other') {
+      cmsOtherInputBlock.style.display = 'block';
+    } else {
+      cmsOtherInputBlock.style.display = 'none';
+    }
+  },
   showResult: function () {
     inputTotal.value = this.screenPrice;
     inputTotalCountOther.value = this.allServicePrices;
@@ -127,18 +157,25 @@ const appData = {
     cloneScreen.querySelector('input').value = null;
 
     addScreenBtn.before(cloneScreen);
-    this.getScreensElements();
+    this.getChangeableFormElements();
   },
-  getScreensElements: function () {
-    this.elements.screens = [...this.getScreens()].reduce((elements, screen) => {
-      const select = screen.querySelector('select');
-      const input = screen.querySelector('input');
-      elements.push(select, input);
+
+  getChangeableFormElements: function () {
+    this.changeableFormElements = [
+      ...document.querySelectorAll(
+        '.main-controls__views.element:first-child, ' +
+          '.main-controls__views.cms, ' +
+          '.main-controls__views.element:nth-child(2) .main-controls__checkbox, ' +
+          '.main-controls__views.element:nth-child(4)'
+      ),
+    ].reduce((elements, item) => {
+      const childrenItem = item.querySelectorAll('select, input');
+      elements.push(...childrenItem);
       return elements;
     }, []);
   },
   toggleMainControlsViews: function () {
-    this.elements.screens.forEach((element) => (element.disabled = !element.disabled));
+    this.changeableFormElements.forEach((element) => (element.disabled = !element.disabled));
     addScreenBtn.disabled = !addScreenBtn.disabled;
   },
   addServices: function () {
@@ -169,61 +206,57 @@ const appData = {
       },
       { price: 0, count: 0 }
     );
+
+    if (cmsOpen.checked && isNumber(cmsSelect.value)) {
+      screenSumData.price = screenSumData.price + screenSumData.price * (cmsSelect.value / 100);
+    } else if (cmsOpen.checked && cmsSelect.value === 'other') {
+      screenSumData.price = screenSumData.price + screenSumData.price * (cmsOtherInput.value / 100);
+    }
+
     this.numberOfScreens = screenSumData.count;
     this.screenPrice = screenSumData.price;
+
     this.allServicePrices = this.services.reduce((sum, service) => {
       if (service.priceType === 'percent') sum += this.screenPrice * (service.price / 100);
       if (service.priceType === 'number') sum += service.price;
       return sum;
     }, 0);
+
     this.fullPrice = this.screenPrice + this.allServicePrices;
 
     const { fullPrice, rollback } = this;
     this.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
   },
-  screensValidation: function () {
-    // console.log('input');
-    const isNumber = (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' ');
-    // if (event.target.tagName === 'SELECT') {
-    //   if (event.target.value !== '') {
-    //     event.target.setCustomValidity('Укажите тип экрана');
-    //   } else {
-    //     event.target.setCustomValidity('');
-    //   }
-    // }
-    // if (event.target.tagName === 'INPUT') {
-    //   if (isNumber(event.target.value) !== '') {
-    //     event.target.setCustomValidity('Укажите количество экранов');
-    //   } else {
-    //     event.target.setCustomValidity('');
-    //   }
-    // }
+  validation: function (isValid, message) {
     const alert = document.getElementById('alert');
     if (alert) alert.remove();
+    if (isValid) {
+      startBtn.disabled = false;
+    } else {
+      const btnBlock = document.querySelector('.main-total__buttons');
+      btnBlock.before(this.getAlert(message));
+    }
+  },
+  isValidScreens: function () {
+    console.log();
     const isValid = [...this.getScreens()].some((screen) => {
       const selectValue = screen.querySelector('select').value;
       const inputValue = screen.querySelector('input').value;
       return selectValue !== '' && isNumber(inputValue);
     });
-    if (isValid) {
-      startBtn.disabled = false;
-    } else {
-      const btnBlock = document.querySelector('.main-total__buttons');
-      btnBlock.before(this.getAlert('Параметры экранов заданы не корректно'));
-    }
+    this.validation(isValid, 'Параметры экранов заданы не корректно');
   },
-  isValidScreens: function () {
-    return this.elements.screens.reduce((isValid, element) => {
-      return element.checkValidity() && isValid;
-    }, true);
+  isValidNumber: function (event) {
+    this.validation(isNumber(event.target.value), 'Количество % за CMS указано не корректно');
   },
 
   getAlert: function (text) {
-    const alert = document.createElement('small');
+    const alert = document.createElement('span');
     alert.id = 'alert';
     alert.style.color = 'red';
     alert.style.textAlign = 'center';
     alert.style.margin = '5px';
+    alert.style.fontWeight = '600';
     alert.textContent = text;
     return alert;
   },
