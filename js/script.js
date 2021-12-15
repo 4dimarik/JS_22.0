@@ -104,12 +104,12 @@ const appData = {
   toggleCms: function () {
     if (cmsOpen.checked && hiddenCmsVariants.style.display === 'none') {
       hiddenCmsVariants.style.display = 'flex';
-      this.validation();
     } else {
       cmsSelect.value = '';
       cmsOtherInput.value = '';
       hiddenCmsVariants.style.display = 'none';
     }
+    this.validation();
   },
   changeCmsSelect: function (event) {
     if (event.target.value === 'other') {
@@ -220,7 +220,6 @@ const appData = {
     this.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
   },
   isValidFields: function () {
-    console.log(this.changeableFormElements);
     return this.changeableFormElements.reduce(
       (validData, element) => {
         if (element.type === 'text' && element.id !== 'cms-other-input') {
@@ -252,7 +251,6 @@ const appData = {
           if (element.localName === 'select' && element.id === 'cms-select') {
             const isElementValid = element.value !== '';
             validData.isValid = validData.isValid && isElementValid;
-            console.log(validData.isValid, isElementValid);
             if (!isElementValid) validData.messages.push(`"${element[0].textContent}" не указан`);
           }
         }
@@ -263,7 +261,6 @@ const appData = {
   },
   validation: function () {
     const validationData = this.isValidFields();
-    console.log(validationData);
     const alert = document.getElementById('alert');
     if (alert) alert.remove();
     if (validationData.isValid) {
