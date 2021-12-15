@@ -23,7 +23,6 @@ const [
   inputTotalCountRollback,
 ] = document.getElementsByClassName('total-input');
 
-//let screens = document.querySelectorAll('.screen');
 const isNumber = (num) => !isNaN(parseFloat(num)) && isFinite(num) && !num.includes(' ');
 
 const appData = {
@@ -38,10 +37,6 @@ const appData = {
   numberOfScreens: 0,
   services: [],
   isCalculated: false,
-
-  elements: {
-    screens: [],
-  },
   changeableFormElements: [],
   initScreens: null,
 
@@ -54,7 +49,7 @@ const appData = {
 
     startBtn.disabled = true;
     const screensBlock = document.querySelectorAll('.main-controls__views.element')[0];
-    screensBlock.addEventListener('input', this.isValidScreens.bind(appData));
+    screensBlock.addEventListener('input', this.validation.bind(appData));
 
     inputRollback.addEventListener('input', this.rollbackChange.bind(appData));
     this.getChangeableFormElements();
@@ -63,7 +58,7 @@ const appData = {
 
     cmsOpen.addEventListener('click', this.toggleCms.bind(appData));
     cmsSelect.addEventListener('change', this.changeCmsSelect.bind(appData));
-    cmsOtherInput.addEventListener('input', this.isValidNumber.bind(appData));
+    cmsOtherInput.addEventListener('input', this.validation.bind(appData));
   },
 
   start: function () {
@@ -79,7 +74,7 @@ const appData = {
     this.toggleDispley(startBtn);
     this.toggleDispley(resetBtn);
 
-    // this.logger();
+    this.logger();
   },
   reset: function () {
     this.isCalculated = false;
@@ -109,7 +104,10 @@ const appData = {
   toggleCms: function () {
     if (cmsOpen.checked && hiddenCmsVariants.style.display === 'none') {
       hiddenCmsVariants.style.display = 'flex';
+      this.validation();
     } else {
+      cmsSelect.value = '';
+      cmsOtherInput.value = '';
       hiddenCmsVariants.style.display = 'none';
     }
   },
@@ -119,6 +117,7 @@ const appData = {
     } else {
       cmsOtherInputBlock.style.display = 'none';
     }
+    this.validation();
   },
   showResult: function () {
     inputTotal.value = this.screenPrice;
@@ -126,13 +125,6 @@ const appData = {
     inputTotalFullCount.value = this.fullPrice;
     inputTotalCountRollback.value = this.servicePercentPrice;
     inputTotalCount.value = this.numberOfScreens;
-  },
-  getValue: function (question, defaultValue, check) {
-    let value;
-    do {
-      value = prompt(question, defaultValue);
-    } while (!check(value));
-    return value;
   },
   addTitle: function () {
     document.title = titleElement.textContent;
@@ -227,37 +219,75 @@ const appData = {
     const { fullPrice, rollback } = this;
     this.servicePercentPrice = fullPrice - fullPrice * (rollback / 100);
   },
-  validation: function (isValid, message) {
+  isValidFields: function () {
+    return this.changeableFormElements.reduce(
+      (validData, element) => {
+        if (element.type === 'text' && element.id !== 'cms-other-input') {
+          const isElementValid = element.value !== '' && isNumber(element.value);
+          validData.isValid = validData.isValid && isElementValid;
+          if (!isElementValid)
+            validData.messages.push(
+              `Поле "${element.placeholder}" заполнено не корректно: "${element.value}"`
+            );
+        }
+        if (element.localName === 'select' && element.id !== 'cms-select') {
+          const isElementValid = element.value !== '';
+          validData.isValid = validData.isValid && isElementValid;
+          if (!isElementValid) validData.messages.push(`"${element[0].textContent}" не указан`);
+        }
+        if (cmsOpen.checked) {
+          if (
+            cmsSelect.value === 'other' &&
+            element.id === 'cms-other-input' &&
+            element.type === 'text'
+          ) {
+            const isElementValid = element.value !== '' && isNumber(element.value);
+            validData.isValid = validData.isValid && isElementValid;
+            if (!isElementValid)
+              validData.messages.push(
+                `Поле "${element.placeholder}" заполнено не корректно: "${element.value}"`
+              );
+          }
+          if (element.localName === 'select' && element.id === 'cms-select') {
+            const isElementValid = element.value !== '';
+            validData.isValid = validData.isValid && isElementValid;
+            if (!isElementValid) validData.messages.push(`"${element[0].textContent}" не указан`);
+          }
+        }
+        return validData;
+      },
+      { isValid: true, messages: [] }
+    );
+  },
+  validation: function () {
+    const validationData = this.isValidFields();
     const alert = document.getElementById('alert');
     if (alert) alert.remove();
-    if (isValid) {
+    if (validationData.isValid) {
       startBtn.disabled = false;
     } else {
       const btnBlock = document.querySelector('.main-total__buttons');
-      btnBlock.before(this.getAlert(message));
+      btnBlock.before(this.getAlert(validationData.messages));
     }
   },
-  isValidScreens: function () {
-    console.log();
-    const isValid = [...this.getScreens()].some((screen) => {
-      const selectValue = screen.querySelector('select').value;
-      const inputValue = screen.querySelector('input').value;
-      return selectValue !== '' && isNumber(inputValue);
-    });
-    this.validation(isValid, 'Параметры экранов заданы не корректно');
-  },
-  isValidNumber: function (event) {
-    this.validation(isNumber(event.target.value), 'Количество % за CMS указано не корректно');
-  },
-
-  getAlert: function (text) {
-    const alert = document.createElement('span');
+  getAlert: function (messages) {
+    const alert = document.createElement('div');
     alert.id = 'alert';
-    alert.style.color = 'red';
-    alert.style.textAlign = 'center';
+    alert.style.color = 'white';
+    alert.style.backgroundColor = '#a45858';
+    alert.style.borderRadius = '5px';
+    //alert.style.textAlign = 'center';
     alert.style.margin = '5px';
-    alert.style.fontWeight = '600';
-    alert.textContent = text;
+    //alert.style.fontWeight = '600';
+
+    const messagesList = document.createElement('ol');
+    messages.forEach((message) => {
+      const messagesListItem = document.createElement('li');
+      messagesListItem.textContent = message;
+      messagesList.append(messagesListItem);
+    });
+    alert.append(messagesList);
+
     return alert;
   },
   rollbackChange: function (event) {
@@ -272,12 +302,12 @@ const appData = {
   },
 
   logger: function () {
-    console.log('screens: ', this.screens);
-    console.log('services: ', this.services);
-    console.log('allServicePrices:', this.allServicePrices);
-    console.log('fullPrice: ', this.fullPrice);
-    console.log(this.servicePercentPrice);
-    console.log(this.elements);
+    // console.log('screens: ', this.screens);
+    // console.log('services: ', this.services);
+    // console.log('allServicePrices:', this.allServicePrices);
+    // console.log('fullPrice: ', this.fullPrice);
+    // console.log(this.servicePercentPrice);
+    // console.log(this.elements);
 
     console.log(this);
   },
