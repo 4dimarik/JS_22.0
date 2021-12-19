@@ -334,7 +334,7 @@ const render = () => {
 
     table.addEventListener('click', (event) => {
       if ([...event.target.classList].includes('btn-delete')) {
-        const id = event.target.closest('tr').dataset.id;
+        const { id } = event.target.closest('tr').dataset;
         storage.remove(id);
         render();
       }
@@ -473,7 +473,6 @@ addWorkerBtn.addEventListener('click', (event) => {
     const worker = new workers[form.post.value](props);
     worker.storage.add(worker);
     render();
-    console.log(props);
     document
       .querySelector('form')
       .querySelectorAll('*[name]')
